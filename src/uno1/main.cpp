@@ -13,6 +13,7 @@ const long BAUD_RATE = 9600;
 void setup() {
   // Donanımsal portu başlat. Bu port doğrudan UNO_2'ye bağlı.
   Serial.begin(BAUD_RATE);
+  delay(1000);
 }
 
 void loop() {
@@ -22,5 +23,5 @@ void loop() {
   }
   // Yüksek hızlarda (baud rate) bu gecikmeyi kaldırmayı deneyin
   // veya SoftSerial'in yetişmesi için küçük bir gecikme bırakın.
-  delay(1); 
+  delay(100);
 }

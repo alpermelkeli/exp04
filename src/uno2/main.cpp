@@ -1,58 +1,73 @@
 /*
- * UNO_2 (ALICI - SADECE BİRİKTİRİR) - BÖLÜM 1: DONANIMSAL
+ * UNO_2 (RECEIVER AND REPORTER) - PART 1: HARDWARE
  *
- * Gelen veriyi 1 saniye boyunca biriktirir ve terminale basar.
- * Hata sayımı kaldırıldı.
+ * CONNECTION (Proteus/Wokwi):
+ * - Connect this board's Pin 0 (RX) -> to UNO_1's Pin 1 (TX).
+ * - FOR REPORTING TO US:
+ * - Connect this board's Pin 11 (TX) -> to the "Virtual Terminal's" RX pin.
  */
 
 #include <SoftwareSerial.h>
 #include <Arduino.h>
 
-// BU DEĞERİ TEST İÇİN DEĞİŞTİRİN (UNO_1 ile aynı olmalı)
+// CHANGE THIS VALUE FOR TESTING (Must be same as UNO_1)
 const long BAUD_RATE = 9600;
 
-// Raporlama için bir yazılımsal port oluşturuyoruz (Pin 10 RX, Pin 11 TX)
+// We are creating a software serial port for reporting (Pin 10 RX, Pin 11 TX)
 SoftwareSerial reportSerial(10, 11); 
 
+char expectedChar = 'a';
+long errorCount = 0;
+long successCount = 0;
 long lastReportTime = 0;
 
-// Gelen veriyi biriktirmek için bir String
-String receivedData = "";
-
 void setup() {
-  // UNO_1'den veri almak için Donanımsal Port
+  // Hardware Serial Port for receiving data from UNO_1
   Serial.begin(BAUD_RATE);
   
-  // PC'ye (Virtual Terminal) raporlama yapmak için Yazılımsal Port
-  reportSerial.begin(9600); // Raporlama hızı sabit kalabilir
-  reportSerial.println("--- BÖLÜM 1: DONANIMSAL ALICI BAŞLADI ---");
-  reportSerial.print("Dinleme Hızı (Baud Rate): ");
+  // Software Serial Port for reporting to PC (Virtual Terminal)
+  reportSerial.begin(9600); // Reporting speed can remain constant
+  reportSerial.println("--- PART 1: HARDWARE TEST STARTED ---");
+  reportSerial.print("Listening Speed (Baud Rate): ");
   reportSerial.println(BAUD_RATE);
 }
 
 
 void loop() {
-  // UNO_1'den (Hardware Serial) veri geldi mi?
+  // Is data available from UNO_1 (Hardware Serial)?
   if (Serial.available()) {
     char c = Serial.read();
     
-    // Gelen karakteri String'e ekle
-    receivedData += c;
+    // Is the incoming data what we expected?
+    if (c == expectedChar) {
+      successCount++;
+    } else {
+      errorCount++;
+      // If there is an error, reset the expected sequence
+      expectedChar = c; 
+    }
+    
+    // Advance the expected character to the next one
+    expectedChar++;
+    if (expectedChar > 'z') {
+      expectedChar = 'a';
+    }
   }
   
-  // Her 1 saniyede bir Virtual Terminal'e rapor yazdır
+  // Print a report to the Virtual Terminal every 1 second
   if (millis() - lastReportTime > 1000) {
-    reportSerial.print("--- 1 Saniyelik Rapor (");
+    reportSerial.print("--- 1 Second Report (");
     reportSerial.print(BAUD_RATE);
     reportSerial.print(" baud) --- \n");
-    
-    // Biriken veriyi bas
-    reportSerial.print("Alınan Veri: ");
-    reportSerial.println(receivedData);
+    reportSerial.print("Successful Bytes: ");
+    reportSerial.println(successCount);
+    reportSerial.print("Failed Bytes: ");
+    reportSerial.println(errorCount);
     reportSerial.println("------------------------------------");
     
-    // Sayaçları ve String'i sıfırla
+    // Reset counters
     lastReportTime = millis();
-    receivedData = "";
+    successCount = 0;
+    errorCount = 0;
   }
 }
